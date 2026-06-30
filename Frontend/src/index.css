@@ -1,0 +1,81 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  font-family: 'Inter', sans-serif;
+  background-color: #ffffff;
+}
+/* LNMIIT Brand Colors Customization */
+.bg-lnmiit-blue { background-color: #005a9c; }
+.text-lnmiit-blue { color: #005a9c; }
+.bg-lnmiit-orange { background-color: #e35205; }
+.text-lnmiit-orange { color: #e35205; }
+
+/* Add this at the end of your CSS file */
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: #f8fafc;
+  border-radius: 10px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 10px;
+  border: 1px solid #f8fafc;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #005a9c;
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.5s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+/* ==========================================
+   MODERN DATEPICKER CUSTOMIZATION
+   ========================================== */
+.react-datepicker-wrapper {
+  width: 100%;
+}
+
+.react-datepicker {
+  font-family: 'Inter', sans-serif !important;
+  border: none !important;
+  box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1) !important;
+  border-radius: 1.5rem !important;
+  padding: 0.5rem;
+  font-weight: 600;
+}
+
+.react-datepicker__header {
+  background-color: white !important;
+  border-bottom: none !important;
+  padding-top: 1rem !important;
+}
+
+.react-datepicker__day--selected, 
+.react-datepicker__day--keyboard-selected,
+.react-datepicker__time-list-item--active {
+  background-color: #005a9c !important;
+  border-radius: 0.5rem !important;
+  color: white !important;
+  font-weight: 900 !important;
+}
+
+.react-datepicker__day:hover {
+  background-color: #f3f4f6 !important;
+  border-radius: 0.5rem !important;
+}
+
+.react-datepicker__time-container {
+  border-left: 2px solid #f3f4f6 !important;
+}
