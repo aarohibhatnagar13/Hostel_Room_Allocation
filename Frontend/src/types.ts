@@ -1,37 +1,19 @@
 export enum UserRole {
   STUDENT = 'STUDENT',
   ADMIN = 'ADMIN',
-  LAB_MANAGER = 'LAB_MANAGER',
+  HOSTEL_WARDEN = 'HOSTEL_WARDEN',
   GUEST = 'GUEST'
 }
 
-export interface AuthorizedUser {
-  id: number;
-  email: string;
-  role: string;
-  createdAt?: string;
-}
-
-export interface Lab {
+export interface Room {
   id: string;
-  subject: string;
-  day: string;
-  startTime: number;
-  endTime: number;
+  roomNumber: string;
+  hostelBlock: 'A' | 'B' | 'C';
+  floor: number;
   capacity: number;
-  assignedCount?: number;
-  slotsLeft?: number;
-}
-
-export interface GradePref {
-  subject: string;
-  grade: string; // 'A', 'AB', 'B', etc.
-}
-
-export interface TimeSlot {
-  day: string;
-  startTime: number;
-  endTime: number;
+  occupiedBeds: number;
+  roomType: 'AC' | 'Non-AC';
+  version: number;
 }
 
 export interface Student {
@@ -39,23 +21,20 @@ export interface Student {
   name: string;
   rollNo: string;
   cgpa: number;
-  grades?: GradePref[];
-  availability?: TimeSlot[];
+  priorityScore: number;
+  allocationStatus: 'unallocated' | 'allocated' | 'confirmed' | 'waitlisted';
+  allocatedRoomId?: string;
 }
 
-export interface AllocationResult {
-  id: number;
-  labId: string;
-  studentId: string;
-  student: Student;
-  lab: Lab;
-}
-
-export interface SystemStatus {
-  currentRound: number;
-  isConfirmed: boolean;
-  academicYear: string;
-  semester: string;
+export interface AllocationRun {
+  runId: string;
+  timestamp: string;
+  stats: {
+    roomsFilled: number;
+    studentsUnallocated: number;
+    studentsWaitlisted: number;
+  };
+  results: any[];
 }
 
 export interface ApiResponse<T> {
@@ -64,9 +43,6 @@ export interface ApiResponse<T> {
   message?: string;
   exists?: boolean;
   hasSubmitted?: boolean;
-  studentData?: Student;
-  systemStatus?: SystemStatus; // <-- Added this
-  total?: number;
-  lastPage?: number;
-  isWindowOpen?: boolean;
+  studentData?: any;
+  conflict?: boolean; // For 409 handling
 }
