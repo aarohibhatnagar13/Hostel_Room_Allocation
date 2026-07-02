@@ -127,6 +127,17 @@ export const api = {
     return await handleResponse(res);
   },
 
+  uploadRoomsBulk: async (roomsArray: any[]) => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/admin/rooms/bulk`, fetchOptions('POST', roomsArray));
+      return await handleResponse(res);
+    } catch (e: any) { 
+      return { success: false, message: e.message }; 
+    }
+  },
+
+
+
   getStudentReports: async () => {
     try {
       const res = await fetch(`${API_BASE_URL}/admin/students`, fetchOptions('GET'));

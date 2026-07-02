@@ -185,41 +185,36 @@ app.post(
 
 /* ---------------------- BULK ROOM IMPORT ---------------------- */
 
+/* ---------------------- BULK ROOM IMPORT ---------------------- */
+
 app.post(
     "/api/admin/rooms/bulk",
     requireAuth,
     requireAdmin,
     asyncHandler(async (req, res) => {
         if (!Array.isArray(req.body)) {
-            return res.status(400).json({
-                success: false,
-                message: "Expected an array"
-            });
+            return res.status(400).json({ success: false, message: "Expected an array of rooms." });
         }
 
-        // FIXED: Maps frontend payload to the NEW Database schema
         const rooms = req.body.map(room => ({
-            room_number: room.roomNumber,
-            hostel_name: room.hostelName || room.hostelBlock, // Fallback if admin uses old CSV
-            capacity: Number(room.capacity) || 2,
-            floor: Number(room.floor),
+            room_number: String(room.roomNumber),
+            hostel_name: String(room.hostelName),
+            floor: Number(room.floor) || 1,
+            capacity: Number(room.capacity) || 1,
             room_type: room.roomType || "Single",
-            gender: room.gender || "Both", // NEW Field
+            gender: room.gender || "Both",
+            allowed_years: room.allowedYears && room.allowedYears.length > 0 ? room.allowedYears : null,
             version: 0
         }));
 
         await db.Room.bulkCreate(rooms, {
-            updateOnDuplicate: [
-                "capacity",
-                "floor",
-                "room_type",
-                "gender"
-            ]
+            // If a room already exists, update its details!
+            updateOnDuplicate: ["capacity", "floor", "room_type", "gender", "allowed_years"]
         });
 
         res.json({
             success: true,
-            message: `Imported ${rooms.length} rooms successfully.`
+            message: `Successfully imported and synced ${rooms.length} rooms!`
         });
     })
 );
