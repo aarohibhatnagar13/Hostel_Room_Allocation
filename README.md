@@ -1,6 +1,35 @@
-# LNMIIT Teaching Assistant (TA) Allocation Portal
+# Hostel Allocation System
 
-An automated, secure, and role-based portal designed for The LNM Institute of Information Technology to manage Teaching Assistant applications, algorithmic slot allocations, and attendance tracking.
+An automated, secure, and role-based hostel allocation portal designed to streamline student housing applications, merit-based room assignments, roommate matching, and live hostel occupancy tracking.
+
+## Features
+
+### Admin
+
+* Manage hostel blocks and rooms.
+* Add and update room capacities.
+* Manage student records.
+* Monitor hostel occupancy in real time.
+* Perform merit-based room allocation.
+* Manage user roles and permissions.
+
+### Student
+
+* Register using an institutional email address.
+* Enter academic details (CGPA, Year of Study) for merit tracking.
+* Select ranked room preferences (Block, Single, Double, or Triple).
+* Send and accept mutual roommate requests using roll numbers.
+* View confirmed room allocations and roommate information through a personalized dashboard.
+
+---
+
+## Tech Stack
+
+* **Frontend:** React, Vite
+* **Backend:** Node.js, Express.js
+* **Database:** MySQL 8+
+* **Authentication:** JWT
+* **Version Control:** Git
 
 ---
 
@@ -8,162 +37,139 @@ An automated, secure, and role-based portal designed for The LNM Institute of In
 
 * Node.js v18.0.0 or higher
 * MySQL v8.0 or higher
-* Git (for version control)
-* PM2 (Recommended for production backend management)
+* Git
+* PM2 (recommended for production deployment)
 
 ---
 
-## Local Setup & Installation Guide
+## Local Setup
 
-Follow these exact steps to set up the portal on a local server or IT machine. The project is split into two independent parts: **Backend** and **Frontend**.
-
-### Step 1: Database & Backend Setup
-
-Open your terminal and run the following commands:
+### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/JainAyush-01/TA_Allocation.git
-cd TA_Allocation/Backend
+git clone https://github.com/YourUsername/Hostel_Allocation.git
+cd Hostel_Allocation
+```
+
+### 2. Backend Setup
+
+```bash
+cd Backend
 npm install
 cp .env.example .env
 ```
 
-> Open `Backend/.env` and fill in your actual MySQL credentials (`DB_USER`, `DB_PASSWORD`) and configure your Admin Email/Password.
+Edit the `.env` file and configure:
 
-Run the initialization script to auto-create the database:
+* `DB_USER`
+* `DB_PASSWORD`
+* `ADMIN_EMAIL`
+* `ADMIN_PASSWORD`
+* `PORT=5001`
+
+Initialize the database:
 
 ```bash
-npm run db:init
+node db-init.js
 ```
 
-You should see:
+Expected output:
 
 ```text
-Database 'lnmiit_ta_db' is ready!
+✅ Database 'hostel_allocation_db' is ready!
+✅ All tables initialized successfully!
 ```
 
 Start the backend server:
 
 ```bash
-npm start
+node server.js
 ```
 
-The backend will start on **Port 5000** and automatically sync all database tables.
+The backend runs on **http://localhost:5001**.
 
 ---
 
-### Step 2: Frontend Setup
+### 3. Frontend Setup
 
-Open a second terminal window, navigate to the project folder, and run:
+Open a new terminal:
 
 ```bash
-cd TA_Allocation/Frontend
+cd Frontend
 npm install
 cp .env.example .env
 ```
 
-Ensure the following is present in `Frontend/.env`:
+Configure the frontend environment:
 
 ```env
-VITE_API_BASE_URL=http://localhost:5000/api
+VITE_API_BASE_URL=http://localhost:5001
 ```
 
-Start the frontend server:
+Start the development server:
 
 ```bash
 npm run dev
 ```
 
-The frontend will start on **Port 3080**.
+The frontend will be available at:
 
-Open:
-
-```text
-http://localhost:3080
-```
-
-in your browser.
+**http://localhost:3080**
 
 ---
 
-## System Roles & Access
+## Production Deployment
 
-### Admin
-
-**Access:** `http://localhost:3080/admin`
-
-Capabilities:
-
-* Upload Lab CSVs
-* Run allocation algorithm
-* Manage timelines
-* Manage Lab Managers
-
----
-
-### Lab Manager
-
-**Access:** `http://localhost:3080/admin`
-
-Capabilities:
-
-* View attendance registries
-* Mark TAs present/absent
-* Export CSV reports
-
-Added manually by the Admin.
-
----
-
-### Student
-
-**Access:** `http://localhost:3080/`
-
-Capabilities:
-
-* Register using `@lnmiit.ac.in` email
-* Input CGPA
-* Select lab availability
-* View confirmed allocations
-
----
-
-## Production Deployment Notes
-
-Since this repository is completely decoupled, please follow standard deployment procedures for isolated Frontend and Backend applications.
-
-### 1. Backend (Node.js API)
-
-Navigate to the `Backend` folder.
-
-Ensure the `.env` file contains production database and SMTP credentials.
-
-Start the server using PM2:
+### Backend
 
 ```bash
-pm2 start server.js --name "ta-backend"
+cd Backend
+pm2 start server.js --name "hostel-backend"
 ```
 
----
+Ensure the `.env` file contains:
 
-### 2. Frontend (React UI)
+* Production database credentials
+* SMTP credentials
+* `NODE_ENV=production`
+* `PORT=5001`
 
-Navigate to the `Frontend` folder.
-
-Ensure `VITE_API_BASE_URL` in `.env` points to the live production API URL.
-
-Build the frontend:
+### Frontend
 
 ```bash
+cd Frontend
 npm run build
 ```
 
-The production-ready files will be generated inside the `dist/` folder.
+The production-ready files will be generated in the `dist/` folder.
 
 ---
 
-### 3. Server Admin Routing (IT Setup)
+## Server Configuration
 
-* Use a web server such as Nginx or Apache to serve the `Frontend/dist/` folder.
-* Configure a reverse proxy to route all `/api` traffic to the Node.js backend running on Port 5000.
-* Ensure SPA fallback routing is configured to redirect requests back to `index.html`.
+* Serve the `Frontend/dist` directory using **Nginx** or **Apache**.
+* Configure a reverse proxy to forward `/api` requests to the backend running on **Port 5001**.
+* Enable Single Page Application (SPA) fallback by redirecting unknown routes to `index.html`.
+
+---
+
+## Project Structure
+
+```text
+Hostel_Allocation/
+├── Backend/
+│   ├── server.js
+│   ├── db-init.js
+│   ├── routes/
+│   ├── controllers/
+│   ├── models/
+│   └── .env.example
+│
+├── Frontend/
+│   ├── src/
+│   ├── public/
+│   ├── .env.example
+│   └── package.json
+│
+└── README.md
+```
