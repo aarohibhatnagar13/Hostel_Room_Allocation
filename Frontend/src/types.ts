@@ -16,16 +16,6 @@ export interface Room {
   version: number;
 }
 
-export interface Student {
-  id?: string;
-  name: string;
-  rollNo: string;
-  cgpa: number;
-  priorityScore: number;
-  allocationStatus: 'unallocated' | 'allocated' | 'confirmed' | 'waitlisted';
-  allocatedRoomId?: string;
-}
-
 export interface AllocationRun {
   runId: string;
   timestamp: string;
@@ -35,6 +25,7 @@ export interface AllocationRun {
     studentsWaitlisted: number;
   };
   results: any[];
+  waitlist: any[];
 }
 
 export interface ApiResponse<T> {
@@ -44,5 +35,6 @@ export interface ApiResponse<T> {
   exists?: boolean;
   hasSubmitted?: boolean;
   studentData?: any;
-  conflict?: boolean; // For 409 handling
+  systemStatus?: any;
+  conflict?: boolean; 
 }

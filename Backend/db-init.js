@@ -1,81 +1,92 @@
 import mysql from 'mysql2/promise';
 import dotenv from 'dotenv';
 
-// Load environment variables
 dotenv.config();
 
 async function initializeDatabase() {
     try {
-        console.log("Connecting to MySQL...");
+        console.log("Connecting to MySQL on", process.env.DB_HOST || '127.0.0.1', "...");
         
         const connection = await mysql.createConnection({
-            host: process.env.DB_HOST || 'localhost',
+            host: process.env.DB_HOST || '127.0.0.1',
             user: process.env.DB_USER || 'root',
             password: process.env.DB_PASSWORD || '',
-            port: process.env.DB_PORT
+            port: process.env.DB_PORT || 3306
         });
 
         const dbName = process.env.DB_NAME || 'hostel_allocation_db';
         
-        console.log(`Checking if database '${dbName}' exists...`);
-        await connection.query(`CREATE DATABASE IF NOT EXISTS \`${dbName}\`;`);
-        
-        // Use the created database
+        await connection.query(`DROP DATABASE IF EXISTS \`${dbName}\`;`);
+        await connection.query(`CREATE DATABASE \`${dbName}\`;`);
         await connection.query(`USE \`${dbName}\`;`);
+        
         console.log(`✅ Database '${dbName}' is ready!`);
 
-        // 1. Create Rooms Table (Renamed from Labs)
-        console.log("Creating 'rooms' table...");
+        // 1. Create Rooms
         await connection.query(`
             CREATE TABLE IF NOT EXISTS rooms (
                 id INT PRIMARY KEY AUTO_INCREMENT,
                 room_number VARCHAR(50) NOT NULL,
-                hostel_block VARCHAR(10) NOT NULL, -- e.g., 'A', 'B', 'C'
-                capacity INT NOT NULL DEFAULT 2,     -- Total beds
-                occupied_beds INT DEFAULT 0,         -- Currently filled beds
+                hostel_name VARCHAR(50) NOT NULL,
                 floor INT NOT NULL,
-                room_type ENUM('AC', 'Non-AC') NOT NULL,
-                version INT DEFAULT 0                -- FOR OPTIMISTIC LOCKING
+                capacity INT NOT NULL DEFAULT 2,
+                occupied_beds INT DEFAULT 0,
+                room_type ENUM('Single', 'Double', 'Triple') NOT NULL,
+                gender ENUM('Male', 'Female', 'Both') NOT NULL DEFAULT 'Both',
+                current_occupant_gender ENUM('Male', 'Female', 'Both') DEFAULT 'Both',
+                allowed_years JSON,
+                version INT DEFAULT 0,
+                createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+                updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
             );
         `);
 
-        // 2. Create Students Table
-        console.log("Creating 'students' table...");
+        // 2. Create Students
         await connection.query(`
             CREATE TABLE IF NOT EXISTS students (
                 id INT PRIMARY KEY AUTO_INCREMENT,
                 name VARCHAR(100) NOT NULL,
                 roll_number VARCHAR(20) UNIQUE NOT NULL,
                 email VARCHAR(100) UNIQUE NOT NULL,
+                password VARCHAR(255) NOT NULL,
+                gender ENUM('Male', 'Female') NOT NULL,
                 cgpa FLOAT NOT NULL,
                 year_of_study INT NOT NULL,
-                priority_score FLOAT DEFAULT 0,      -- Calculated: CGPA*10 + Year*2
-                preferred_block VARCHAR(10),
-                preferred_floor INT,
-                ac_preference ENUM('AC', 'Non-AC'),
-                allocated_room_id INT,               -- Foreign key to rooms table
+                preferences JSON,
+                roommate_ids JSON,
+                allocated_room_id INT,
+                allocation_status ENUM('unallocated', 'allocated', 'confirmed', 'waitlisted') DEFAULT 'unallocated',
+                createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+                updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
                 FOREIGN KEY (allocated_room_id) REFERENCES rooms(id) ON DELETE SET NULL
             );
         `);
 
-        // 3. Create Users Table (For Auth)
-        console.log("Creating 'users' table...");
+        // 3. Create Authorized Users (MISSING TABLE ADDED)
         await connection.query(`
-            CREATE TABLE IF NOT EXISTS users (
+            CREATE TABLE IF NOT EXISTS authorized_users (
                 id INT PRIMARY KEY AUTO_INCREMENT,
                 email VARCHAR(100) UNIQUE NOT NULL,
-                password VARCHAR(255) NOT NULL,
-                role ENUM('admin', 'student', 'hostel_warden') DEFAULT 'student'
+                password VARCHAR(255),
+                role ENUM('ADMIN', 'HOSTEL_WARDEN') DEFAULT 'HOSTEL_WARDEN',
+                createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+                updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
             );
         `);
 
-        console.log(`✅ All tables (Rooms, Students, Users) initialized for Hostel System.`);
-        
+        // 4. Create Token Blacklists (MISSING TABLE ADDED)
+        await connection.query(`
+            CREATE TABLE IF NOT EXISTS token_blacklists (
+                token VARCHAR(512) PRIMARY KEY,
+                expiresAt DATETIME NOT NULL
+            );
+        `);
+
+        console.log(`✅ All tables initialized successfully!`);
         await connection.end();
-        console.log(`Database setup complete. You can now start the backend server.`);
+        
     } catch (error) {
-        console.error("❌ Failed to initialize database.");
-        console.error(error.message);
+        console.error("❌ CRITICAL ERROR:", error);
         process.exit(1);
     }
 }

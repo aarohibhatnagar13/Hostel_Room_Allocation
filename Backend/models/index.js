@@ -8,13 +8,6 @@ const sequelize = new Sequelize(dbConfig.DB, dbConfig.USER, dbConfig.PASSWORD, {
   port: process.env.DB_PORT, 
   dialect: dbConfig.dialect,
   timezone: '+05:30', 
-  dialectOptions: {
-    ...(isProduction && {
-      ssl: { require: true, rejectUnauthorized: false }
-    }),
-    dateStrings: true, 
-    typeCast: true
-  },
   logging: false,
   pool: dbConfig.pool
 });
@@ -23,46 +16,45 @@ const db = {};
 db.Sequelize = Sequelize;
 db.sequelize = sequelize;
 
-// --- 1. STUDENT MODEL (Updated for Hostel) ---
+// --- 1. STUDENT MODEL ---
 db.Student = sequelize.define("student", {
   id: { type: Sequelize.INTEGER, autoIncrement: true, primaryKey: true },
   name: { type: Sequelize.STRING, allowNull: false },
-  rollNo: { type: Sequelize.STRING, unique: true, allowNull: false },
+  roll_number: { type: Sequelize.STRING, unique: true, allowNull: false },
   email: { type: Sequelize.STRING, unique: true, allowNull: false },
   password: { type: Sequelize.STRING, allowNull: false },
+  gender: { type: Sequelize.ENUM('Male', 'Female'), allowNull: false },
   
-  // Academic fields for Priority Score
-  yearOfStudy: { type: Sequelize.INTEGER, allowNull: false },
+  year_of_study: { type: Sequelize.INTEGER, allowNull: false },
   cgpa: { type: Sequelize.DOUBLE, defaultValue: 0 },
-  priorityScore: { type: Sequelize.DOUBLE, defaultValue: 0 },
 
-  // Preference fields
-  preferredBlock: { type: Sequelize.STRING },
-  preferredFloor: { type: Sequelize.INTEGER },
-  acPreference: { type: Sequelize.ENUM('AC', 'Non-AC'), defaultValue: 'Non-AC' },
+  // New JSON Fields for the optimized algorithm!
+  preferences: { type: Sequelize.JSON, defaultValue: [] },
+  roommate_ids: { type: Sequelize.JSON, defaultValue: [] },
 
-  isBlacklisted: { type: Sequelize.BOOLEAN, defaultValue: false }
+  allocationStatus: { 
+    type: Sequelize.ENUM('unallocated', 'allocated', 'confirmed', 'waitlisted'), 
+    field: 'allocation_status',
+    defaultValue: 'unallocated' 
+  }
 }, { timestamps: true, tableName: 'students' });
 
-// --- 2. ROOM MODEL (Renamed from Lab + Optimistic Locking) ---
+// --- 2. ROOM MODEL ---
 db.Room = sequelize.define("room", {
   id: { type: Sequelize.INTEGER, autoIncrement: true, primaryKey: true },
-  roomNumber: { type: Sequelize.STRING, allowNull: false },
-  hostelBlock: { type: Sequelize.STRING, allowNull: false },
+  room_number: { type: Sequelize.STRING, allowNull: false },
+  hostel_name: { type: Sequelize.STRING, allowNull: false },
   floor: { type: Sequelize.INTEGER, allowNull: false },
   capacity: { type: Sequelize.INTEGER, defaultValue: 2 },
-  occupiedBeds: { type: Sequelize.INTEGER, defaultValue: 0 },
-  roomType: { type: Sequelize.ENUM('AC', 'Non-AC'), defaultValue: 'Non-AC' },
-  
-  // OPTIMISTIC LOCKING: Sequelize increments this automatically on every update
-  version: { type: Sequelize.INTEGER, defaultValue: 0 }
-}, { 
-  timestamps: true, 
-  tableName: 'rooms',
-  version: true // Tells Sequelize to handle optimistic locking via the 'version' column
-});
+  occupied_beds: { type: Sequelize.INTEGER, defaultValue: 0 },
+  room_type: { type: Sequelize.ENUM('Single', 'Double', 'Triple'), allowNull: false },
+  gender: { type: Sequelize.ENUM('Male', 'Female', 'Both'), defaultValue: 'Both' },
+  current_occupant_gender: { type: Sequelize.ENUM('Male', 'Female', 'Both'), defaultValue: 'Both' },
+  allowed_years: { type: Sequelize.JSON, allowNull: true },
+  version: { type: Sequelize.INTEGER, defaultValue: 0 } 
+}, { timestamps: true, tableName: 'rooms', version: true });
 
-// --- 3. AUTHORIZED USERS (Updated Role) ---
+// --- 3. AUTHORIZED USERS ---
 db.AuthorizedUser = sequelize.define("authorized_user", {
   id: { type: Sequelize.INTEGER, autoIncrement: true, primaryKey: true },
   email: { type: Sequelize.STRING, unique: true, allowNull: false },
@@ -76,14 +68,8 @@ db.TokenBlacklist = sequelize.define("token_blacklist", {
   expiresAt: { type: Sequelize.DATE, allowNull: false }
 }, { timestamps: false, tableName: 'token_blacklists' });
 
-// =====================================
-// RELATIONSHIPS
-// =====================================
-
-// A student can be allocated to ONE room
-db.Student.belongsTo(db.Room, { foreignKey: 'allocatedRoomId', as: 'allocatedRoom' });
-
-// A room can have MANY students (up to its capacity)
-db.Room.hasMany(db.Student, { foreignKey: 'allocatedRoomId', as: 'residents' });
+// --- RELATIONSHIPS ---
+db.Student.belongsTo(db.Room, { foreignKey: 'allocated_room_id', as: 'allocatedRoom' });
+db.Room.hasMany(db.Student, { foreignKey: 'allocated_room_id', as: 'residents' });
 
 export default db;

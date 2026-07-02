@@ -7,7 +7,7 @@ import { AdminLayout } from './components/AdminLayout';
 import { AdminDashboard } from './pages/AdminDashboard';
 import { AdminAttendance } from './pages/AdminAttendance'; 
 import { AdminReports } from './pages/AdminReports';
-import { AllocationHistory } from './pages/AllocationHistory.tsx'; 
+import { AllocationHistory } from './pages/AllocationHistory'; 
 import { UserRole } from './types';
 import { Signup } from './pages/Signup';
 import { VerifyEmail } from './pages/VerifyEmail';
@@ -15,10 +15,12 @@ import { ForgotPassword } from './pages/ForgotPassword';
 import { ResetPassword } from './pages/ResetPassword';
 
 function App() {
+  // 1. Manage the global user role state
   const [userRole, setUserRole] = useState<UserRole>(() => {
     return (localStorage.getItem('userRole') as UserRole) || UserRole.GUEST;
   });
 
+  // 2. This is the function the Login page was missing!
   const handleLogin = (role: UserRole) => {
     localStorage.setItem('userRole', role);
     setUserRole(role);
@@ -35,9 +37,18 @@ function App() {
     <BrowserRouter>
       <div className="min-h-screen bg-gray-50 font-sans">
         {userRole === UserRole.STUDENT && <Navbar role={userRole} onLogout={handleLogout} />}
+        
         <main>
           <Routes>
-            <Route path="/" element={userRole === UserRole.GUEST ? <Login onLogin={handleLogin} /> : <Navigate to={isWardenOrAdmin ? "/admin" : "/portal"} replace />} />
+            {/* PASSING THE handleLogin FUNCTION TO THE LOGIN COMPONENT HERE */}
+            <Route 
+              path="/" 
+              element={
+                userRole === UserRole.GUEST 
+                  ? <Login onLogin={handleLogin} /> 
+                  : <Navigate to={isWardenOrAdmin ? "/admin" : "/portal"} replace />
+              } 
+            />
             
             <Route path="/portal" element={userRole === UserRole.STUDENT ? <StudentPortal /> : <Navigate to="/" replace />} />
             

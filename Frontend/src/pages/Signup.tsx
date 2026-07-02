@@ -1,23 +1,21 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { api } from '../services/api';
 
 export const Signup: React.FC = () => {
   const [formData, setFormData] = useState({ 
     name: '', rollNo: '', email: '', password: '', confirmPassword: '',
-    cgpa: '', yearOfStudy: '1', preferredBlock: 'A', preferredType: 'Non-AC',
-    floorPref1: '1', floorPref2: '2', floorPref3: '3'
+    cgpa: '', yearOfStudy: '1', gender: 'Male', roommateIds: ''
   });
+
+  // Up to 2 Preferences for the new algorithm
+  const [pref1, setPref1] = useState({ hostel: 'BH-1', type: 'Single' });
+  const [pref2, setPref2] = useState({ hostel: 'BH-2', type: 'Double' });
+
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-
-  const priorityScore = useMemo(() => {
-    const cgpaNum = parseFloat(formData.cgpa) || 0;
-    const yearNum = parseInt(formData.yearOfStudy) || 0;
-    return ((cgpaNum * 7) + (yearNum * 3)).toFixed(2);
-  }, [formData.cgpa, formData.yearOfStudy]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -26,12 +24,27 @@ export const Signup: React.FC = () => {
     if (formData.password !== formData.confirmPassword) return setError('Passwords do not match.');
     
     setLoading(true);
-    const response = await api.signup({
-      ...formData,
-      rollNo: formData.rollNo.toUpperCase(),
-      priorityScore: parseFloat(priorityScore)
-    });
+
+    // Format the data perfectly for the new Backend Algorithm
+    const formattedData = {
+        name: formData.name,
+        rollNo: formData.rollNo.toUpperCase(),
+        email: formData.email,
+        password: formData.password,
+        gender: formData.gender,
+        cgpa: parseFloat(formData.cgpa) || 0,
+        yearOfStudy: parseInt(formData.yearOfStudy) || 1,
+        
+        // Formats Roommates: "1554, 1555" -> ["1554", "1555"]
+        roommate_ids: formData.roommateIds.split(',').map(id => id.trim().toUpperCase()).filter(id => id),
+        
+        // Formats Preferences into the JSON array the algorithm expects
+        preferences: [pref1, pref2] 
+    };
+
+    const response = await api.signup(formattedData);
     setLoading(false);
+    
     if (response.success) setSuccess(true);
     else setError(response.message || 'Signup failed.');
   };
@@ -45,7 +58,7 @@ export const Signup: React.FC = () => {
           </div>
           <h2 className="text-2xl font-black text-gray-900 uppercase tracking-tighter mb-4">Registration Successful</h2>
           <p className="text-sm font-bold text-gray-500 mb-8">Please check your email to verify your account.</p>
-          <button onClick={() => navigate('/')} className="w-full bg-indigo-600 text-white py-4 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-indigo-700 transition-all">Return to Login</button>
+          <button onClick={() => navigate('/')} className="w-full bg-[#005a9c] text-white py-4 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-blue-800 transition-all">Return to Login</button>
         </div>
       </div>
     );
@@ -55,44 +68,66 @@ export const Signup: React.FC = () => {
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4">
       <div className="max-w-2xl w-full space-y-8 bg-white p-10 rounded-[2.5rem] shadow-xl border border-gray-100">
         <div className="text-center">
-          <h2 className="text-3xl font-black text-indigo-700 uppercase tracking-tighter">Student Registration</h2>
+          <h2 className="text-3xl font-black text-[#005a9c] uppercase tracking-tighter">Student Registration</h2>
           <p className="text-gray-400 text-[10px] font-black uppercase tracking-widest mt-1">Housing Allocation Portal</p>
         </div>
 
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+          
+          {/* PERSONAL DETAILS */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <input type="text" required className="w-full px-4 py-3 border border-gray-200 rounded-2xl bg-gray-50 font-bold text-sm outline-none"
               value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} placeholder="Full Name" />
+            
             <input type="text" required className="w-full px-4 py-3 border border-gray-200 rounded-2xl bg-gray-50 font-bold text-sm uppercase outline-none"
-              value={formData.rollNo} onChange={(e) => setFormData({ ...formData, rollNo: e.target.value })} placeholder="Roll No" />
+              value={formData.rollNo} onChange={(e) => setFormData({ ...formData, rollNo: e.target.value })} placeholder="Roll No (e.g. 2024UEC1554)" />
+            
             <input type="number" step="0.01" required className="w-full px-4 py-3 border border-gray-200 rounded-2xl bg-gray-50 font-bold text-sm outline-none"
-              value={formData.cgpa} onChange={(e) => setFormData({ ...formData, cgpa: e.target.value })} placeholder="CGPA (e.g. 9.5)" />
+              value={formData.cgpa} onChange={(e) => setFormData({ ...formData, cgpa: e.target.value })} placeholder="CGPA (e.g. 8.5)" />
+            
             <select className="w-full px-4 py-3 border border-gray-200 rounded-2xl bg-gray-50 font-bold text-sm outline-none"
               value={formData.yearOfStudy} onChange={(e) => setFormData({ ...formData, yearOfStudy: e.target.value })}>
               <option value="1">1st Year</option><option value="2">2nd Year</option><option value="3">3rd Year</option><option value="4">4th Year</option>
             </select>
+
+            <select className="w-full px-4 py-3 border border-gray-200 rounded-2xl bg-gray-50 font-bold text-sm outline-none"
+              value={formData.gender} onChange={(e) => setFormData({ ...formData, gender: e.target.value })}>
+              <option value="Male">Male</option><option value="Female">Female</option>
+            </select>
+
+            <input type="text" className="w-full px-4 py-3 border border-gray-200 rounded-2xl bg-gray-50 font-bold text-sm uppercase outline-none"
+              value={formData.roommateIds} onChange={(e) => setFormData({ ...formData, roommateIds: e.target.value })} placeholder="Roommate Roll No (Optional)" />
           </div>
 
-          <div className="p-6 bg-indigo-50/50 rounded-[2rem] border border-indigo-100">
-            <label className="text-[10px] font-black uppercase tracking-widest text-indigo-400 block mb-3">Room Preferences</label>
-            <div className="grid grid-cols-2 gap-4">
-               <select className="px-4 py-3 border border-gray-200 rounded-xl bg-white font-bold text-xs" value={formData.preferredBlock} onChange={(e) => setFormData({...formData, preferredBlock: e.target.value})}>
-                  <option value="A">Block A</option><option value="B">Block B</option><option value="C">Block C</option>
-               </select>
-               <select className="px-4 py-3 border border-gray-200 rounded-xl bg-white font-bold text-xs" value={formData.preferredType} onChange={(e) => setFormData({...formData, preferredType: e.target.value})}>
-                  <option value="Non-AC">Non-AC</option><option value="AC">AC Room</option>
-               </select>
+          {/* ROOM PREFERENCES */}
+          <div className="p-6 bg-blue-50/50 rounded-[2rem] border border-blue-100">
+            <label className="text-[10px] font-black uppercase tracking-widest text-[#005a9c] block mb-3">Room Preferences (In Order)</label>
+            
+            <div className="space-y-3">
+                <div className="grid grid-cols-2 gap-4">
+                    <input type="text" className="px-4 py-3 border border-gray-200 rounded-xl bg-white font-bold text-xs" 
+                        value={pref1.hostel} onChange={(e) => setPref1({...pref1, hostel: e.target.value})} placeholder="Pref 1 Hostel (e.g. BH-1)" />
+                    <select className="px-4 py-3 border border-gray-200 rounded-xl bg-white font-bold text-xs" 
+                        value={pref1.type} onChange={(e) => setPref1({...pref1, type: e.target.value})}>
+                        <option value="Single">Single</option><option value="Double">Double</option><option value="Triple">Triple</option>
+                    </select>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                    <input type="text" className="px-4 py-3 border border-gray-200 rounded-xl bg-white font-bold text-xs" 
+                        value={pref2.hostel} onChange={(e) => setPref2({...pref2, hostel: e.target.value})} placeholder="Pref 2 Hostel (e.g. BH-2)" />
+                    <select className="px-4 py-3 border border-gray-200 rounded-xl bg-white font-bold text-xs" 
+                        value={pref2.type} onChange={(e) => setPref2({...pref2, type: e.target.value})}>
+                        <option value="Single">Single</option><option value="Double">Double</option><option value="Triple">Triple</option>
+                    </select>
+                </div>
             </div>
           </div>
 
-          <div className="bg-gray-900 p-6 rounded-[2rem] text-center">
-             <p className="text-gray-400 text-[10px] font-black uppercase mb-1">Priority Score Preview</p>
-             <p className="text-4xl font-black text-white">{priorityScore}</p>
-          </div>
-
+          {/* ACCOUNT SECURITY */}
           <div className="space-y-4">
             <input type="email" required className="w-full px-4 py-3 border border-gray-200 rounded-2xl bg-gray-50 font-bold text-sm outline-none"
-              value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} placeholder="Email Address" />
+              value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} placeholder="Institutional Email" />
             <div className="grid grid-cols-2 gap-4">
               <input type="password" required className="w-full px-4 py-3 border border-gray-200 rounded-2xl bg-gray-50 font-bold text-sm outline-none"
                 value={formData.password} onChange={(e) => setFormData({ ...formData, password: e.target.value })} placeholder="Password" />
@@ -103,7 +138,7 @@ export const Signup: React.FC = () => {
 
           {error && <div className="text-red-500 text-[10px] font-black uppercase text-center">{error}</div>}
 
-          <button type="submit" disabled={loading} className="w-full py-4 text-xs font-black uppercase tracking-widest rounded-2xl text-white bg-indigo-600 hover:bg-indigo-700 shadow-xl transition-all">
+          <button type="submit" disabled={loading} className="w-full py-4 text-xs font-black uppercase tracking-widest rounded-2xl text-white bg-[#005a9c] hover:bg-blue-800 shadow-xl transition-all">
             {loading ? 'Processing...' : 'Submit Request'}
           </button>
         </form>
