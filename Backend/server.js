@@ -69,31 +69,51 @@ app.get(
     "/api/student/check/:rollNo",
     requireAuth,
     asyncHandler(async (req, res) => {
+        // Uses the secure email from your JWT Token to find you
         const student = await db.Student.findOne({
-            where: {
-                rollNo: req.params.rollNo.toUpperCase()
-            },
-            include: [
-                {
-                    model: db.Room,
-                    as: "allocatedRoom"
-                }
-            ]
+            where: { email: req.user.email },
+            include: [{ model: db.Room, as: "allocatedRoom" }]
         });
 
         if (!student) {
-            // Frontend expects { exists: false } to redirect/handle errors gracefully
             return res.json({ exists: false, message: "Student not found" });
         }
 
         res.json({
             success: true,
             exists: true,
-            hasSubmitted: true, // Since preferences are now part of signup
+            hasSubmitted: true, 
             studentData: student
         });
     })
+);;
+
+
+
+// Get all students for the Admin Report
+app.get(
+    "/api/admin/students",
+    requireAuth,
+    requireWardenOrAdmin,
+    asyncHandler(async (req, res) => {
+        const students = await db.Student.findAll({
+            include: [{ model: db.Room, as: "allocatedRoom" }],
+            order: [['year_of_study', 'DESC'], ['cgpa', 'DESC']] // Sorts by priority automatically
+        });
+
+        res.json({
+            success: true,
+            data: students
+        });
+    })
 );
+
+
+
+
+
+
+
 
 /* ------------------------- ALLOCATION ------------------------- */
 

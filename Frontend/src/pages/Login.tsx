@@ -24,16 +24,13 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
       const response = await loginUser(email, password);
 
       if (response.success && response.role) {
-        // Save to local storage
         localStorage.setItem('userRole', response.role);
         if (response.rollNo) {
             localStorage.setItem('currentRollNo', response.rollNo);
         }
 
-        // Update global state
         onLogin(response.role as UserRole);
 
-        // Safely navigate based on role
         if (response.role === 'ADMIN' || response.role === 'HOSTEL_WARDEN') {
             navigate('/admin');
         } else {
@@ -44,7 +41,6 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
       }
     } catch (err: any) {
       console.error("Login Crash:", err);
-      // THIS WILL PRINT THE EXACT ERROR ON YOUR SCREEN!
       setError(`Crash: ${err.message || err.toString()}`); 
     } finally {
       setLoading(false);
@@ -75,7 +71,7 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
                 type="email"
                 required
                 className="w-full px-5 py-4 border border-gray-200 placeholder-gray-400 text-gray-900 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#005a9c] focus:bg-white bg-gray-50 font-bold text-sm transition-all"
-                placeholder="rollno@mnit.ac.in"
+                placeholder="rollno@lnmiit.ac.in"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
               />
@@ -92,7 +88,7 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                 />
-                <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-blue-600 transition-colors">
+                <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-[#005a9c] text-xs font-black uppercase">
                   {showPassword ? "Hide" : "Show"}
                 </button>
               </div>
@@ -122,7 +118,7 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
 
         <div className="text-center pt-2">
           <p className="text-xs font-bold text-gray-500">
-            New Student? <Link to="/signup" className="text-[#005a9c] hover:underline uppercase tracking-wider font-black ml-1">Create Account</Link>
+            New Student? <Link to="/signup" className="text-[#005a9c] hover:text-blue-800 uppercase tracking-wider font-black ml-1">Create Account</Link>
           </p>
         </div>
       </div>

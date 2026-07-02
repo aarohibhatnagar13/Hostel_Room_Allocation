@@ -1,88 +1,77 @@
 import db from "../models/index.js";
-import { runHostelAllocation } from "../logic/allocator.js";
+import { runHostelAllocationOptimized } from "../logic/allocator.js";
 import lruCache from "../utils/lruCache.js";
-import { asyncHandler } from "../utils/AsyncHandler.js"; // Import your utility
+import { asyncHandler } from "../utils/AsyncHandler.js";
 import { v4 as uuidv4 } from 'uuid';
 
-/**
- * 1. RUN NEW ALLOCATION
- * Runs the priority-based greedy algorithm and saves result to LRU Cache.
- */
 export const triggerAllocation = asyncHandler(async (req, res) => {
-    // Fetch data from DB
-    const rooms = await db.Room.findAll();
-    const students = await db.Student.findAll();
+    // 1. Fetch unallocated students and all rooms
+    const rooms = await db.Room.findAll({ raw: true });
+    const students = await db.Student.findAll({ 
+        where: { allocation_status: 'unallocated' },
+        raw: true 
+    });
 
-    // Execute the Greedy Algorithm O(n log n)
-    const result = await runHostelAllocation(rooms, students);
+    if (students.length === 0) {
+        return res.status(400).json({ success: false, message: "No unallocated students found." });
+    }
 
-    // Generate ID and save to our custom LRU Cache
+    // 2. Run the Engine!
+    const result = await runHostelAllocationOptimized(rooms, students);
+
+    // 3. Save the actual results to the Database (in a transaction for safety)
+    await db.sequelize.transaction(async (t) => {
+        // Update Allocated Students
+        for (const alloc of result.results.allocations) {
+            await db.Student.update(
+                { allocated_room_id: alloc.room_id, allocation_status: 'allocated' },
+                { where: { id: alloc.student_id }, transaction: t }
+            );
+            // Update Room Occupancy and Gender Lock
+            await db.Room.increment('occupied_beds', { by: 1, where: { id: alloc.room_id }, transaction: t });
+            await db.Room.update(
+                { current_occupant_gender: alloc.room_gender }, 
+                { where: { id: alloc.room_id }, transaction: t }
+            );
+        }
+
+        // Update Waitlisted Students
+        for (const wait of result.results.waitlist) {
+            await db.Student.update(
+                { allocation_status: 'waitlisted' },
+                { where: { id: wait.student_id }, transaction: t }
+            );
+        }
+    });
+
+    // 4. Cache it for the history page
     const runId = uuidv4();
     lruCache.put(runId, result);
 
-    res.status(200).json({
-        success: true,
-        runId,
-        ...result
-    });
+    res.status(200).json({ success: true, runId, ...result });
 });
 
-/**
- * 2. GET ALLOCATION HISTORY
- * Fetches the list of cached runs (last 10) from memory.
- */
 export const getAllocationHistory = asyncHandler(async (req, res) => {
     const history = lruCache.getAll();
-    res.status(200).json({
-        success: true,
-        history
-    });
+    res.status(200).json({ success: true, history });
 });
 
-/**
- * 3. CONFIRM ROOM BOOKING (OPTIMISTIC LOCKING)
- * Validates the version number to handle concurrency.
- */
 export const confirmRoomBooking = asyncHandler(async (req, res) => {
     const { studentId, roomId, version } = req.body;
-
-    // Use a transaction to ensure both Room and Student update together
     await db.sequelize.transaction(async (t) => {
-        
-        // OPTIMISTIC LOCKING:
-        // We update the room ONLY if the version matches the one the student saw.
-        // If 'updatedRows' is 0, it means someone else changed the room first.
         const [updatedRows] = await db.Room.update(
-            { 
-                occupiedBeds: db.sequelize.literal('occupiedBeds + 1'),
-                version: db.sequelize.literal('version + 1') 
-            },
-            {
-                where: {
-                    id: roomId,
-                    version: version, // This is the concurrency check
-                    occupiedBeds: { [db.Sequelize.Op.lt]: db.sequelize.col('capacity') }
-                },
-                transaction: t
-            }
+            { version: db.sequelize.literal('version + 1') },
+            { where: { id: roomId, version: version }, transaction: t }
         );
-
         if (updatedRows === 0) {
-            // Throwing an error inside transaction automatically triggers ROLLBACK
-            const error = new Error("Conflict: This room has been updated by another user. Please refresh.");
+            const error = new Error("Conflict: Room updated by another user. Please refresh.");
             error.statusCode = 409;
             throw error;
         }
-
-        // Assign the room to the student
         await db.Student.update(
-            { allocatedRoomId: roomId },
+            { allocation_status: 'confirmed' },
             { where: { id: studentId }, transaction: t }
         );
     });
-
-    res.status(200).json({
-        success: true,
-        message: "Room confirmed and allocated successfully!"
-    });
+    res.status(200).json({ success: true, message: "Room confirmed!" });
 });

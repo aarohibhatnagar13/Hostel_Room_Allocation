@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useSearchParams, useNavigate, Link } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
 
 export const ResetPassword = () => {
@@ -56,10 +56,10 @@ export const ResetPassword = () => {
     
     if (res.success) {
       setStatus('success');
-      setMessage(res.message);
+      setMessage(res.message || 'Password successfully updated.');
     } else {
       setStatus('error');
-      setMessage(res.message);
+      setMessage(res.message || 'Failed to update password.');
     }
   };
 
@@ -83,7 +83,13 @@ export const ResetPassword = () => {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8 bg-white p-10 rounded-[2.5rem] shadow-xl border border-gray-100">
+        
         <div className="text-center">
+            <img 
+              src="https://upload.wikimedia.org/wikipedia/en/thumb/f/f6/LNMIIT_logo.png/220px-LNMIIT_logo.png" 
+              alt="University Logo" 
+              className="h-16 mx-auto mb-6 object-contain"
+            />
             <h2 className="text-3xl font-black text-[#005a9c] uppercase tracking-tighter">New Password</h2>
             <p className="mt-2 text-xs font-bold text-gray-400">Create a new secure password for your account.</p>
         </div>
@@ -101,17 +107,17 @@ export const ResetPassword = () => {
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
                         />
-                        <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-[#005a9c]">
+                        <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-[#005a9c] text-xs font-bold uppercase tracking-wider">
                             {showPassword ? "Hide" : "Show"}
                         </button>
                     </div>
                     {password.length > 0 && (
-                        <div className="mt-2 ml-2 text-[10px] font-bold">
-                            {password.length < 8 && <p className="text-red-500">• Use at least 8 characters</p>}
-                            {!/[0-9]/.test(password) && <p className="text-red-500">• Should have at least 1 numeric</p>}
-                            {!/[a-z]/.test(password) && <p className="text-red-500">• At least 1 lowercase letter</p>}
-                            {!/[A-Z]/.test(password) && <p className="text-red-500">• At least 1 uppercase letter</p>}
-                            {!/[^a-zA-Z0-9]/.test(password) && <p className="text-red-500">• At least 1 symbol</p>}
+                        <div className="mt-3 ml-2 text-[10px] font-bold space-y-1">
+                            {password.length < 8 && <p className="text-red-500 flex items-center gap-1"><span className="w-1 h-1 rounded-full bg-red-500"></span> At least 8 characters</p>}
+                            {!/[0-9]/.test(password) && <p className="text-red-500 flex items-center gap-1"><span className="w-1 h-1 rounded-full bg-red-500"></span> At least 1 number</p>}
+                            {!/[a-z]/.test(password) && <p className="text-red-500 flex items-center gap-1"><span className="w-1 h-1 rounded-full bg-red-500"></span> At least 1 lowercase</p>}
+                            {!/[A-Z]/.test(password) && <p className="text-red-500 flex items-center gap-1"><span className="w-1 h-1 rounded-full bg-red-500"></span> At least 1 uppercase</p>}
+                            {!/[^a-zA-Z0-9]/.test(password) && <p className="text-red-500 flex items-center gap-1"><span className="w-1 h-1 rounded-full bg-red-500"></span> At least 1 symbol</p>}
                         </div>
                     )}
                 </div>
@@ -142,6 +148,10 @@ export const ResetPassword = () => {
             >
                 {status === 'loading' ? 'Updating...' : 'Update Password'}
             </button>
+            
+            <div className="text-center pt-2">
+                <button type="button" onClick={() => navigate('/')} className="text-xs font-bold text-gray-400 hover:text-gray-600 uppercase tracking-widest">Cancel & Return</button>
+            </div>
         </form>
       </div>
     </div>

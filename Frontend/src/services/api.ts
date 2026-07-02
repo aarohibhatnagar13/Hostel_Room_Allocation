@@ -127,6 +127,15 @@ export const api = {
     return await handleResponse(res);
   },
 
+  getStudentReports: async () => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/admin/students`, fetchOptions('GET'));
+      return await handleResponse(res);
+    } catch (e: any) { 
+      return { success: false, message: e.message }; 
+    }
+  },
+
   runAllocation: async () => {
     try {
       const res = await fetch(`${API_BASE_URL}/allocation/run`, fetchOptions('POST'));

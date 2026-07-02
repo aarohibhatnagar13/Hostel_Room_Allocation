@@ -81,6 +81,18 @@ async function initializeDatabase() {
                 expiresAt DATETIME NOT NULL
             );
         `);
+        // 5. INSERT DUMMY TEST ROOMS
+        console.log("Injecting test rooms...");
+        await connection.query(`
+            INSERT INTO rooms (room_number, hostel_name, floor, capacity, room_type, gender)
+            VALUES 
+            ('101', 'BH-1', 1, 1, 'Single', 'Both'),
+            ('102', 'BH-1', 1, 2, 'Double', 'Both'),
+            ('201', 'BH-2', 2, 1, 'Single', 'Male');
+        `);
+
+
+
 
         console.log(`✅ All tables initialized successfully!`);
         await connection.end();
@@ -92,3 +104,4 @@ async function initializeDatabase() {
 }
 
 initializeDatabase();
+
