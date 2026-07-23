@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { api } from '../services/api';
-import { CustomSelect } from "../components/CustomSelect";
+
+import {CustomSelect} from "../components/CustomSelect";
 
 export const AdminAttendance: React.FC = () => {
     const [rooms, setRooms] = useState<any[]>([]);
