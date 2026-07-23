@@ -15,7 +15,7 @@ export const AdminAttendance: React.FC = () => {
     const [uniqueHostels, setUniqueHostels] = useState<string[]>([]);
 
     useEffect(() => { fetchRooms(); }, []);
-
+    //fetch rooms functions
     const fetchRooms = async () => {
         setIsLoading(true);
         try {
