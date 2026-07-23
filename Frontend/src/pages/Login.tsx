@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { UserRole } from '../types';
 import { loginUser } from '../services/auth'; 
-
+//loginProps
 interface LoginProps {
   onLogin: (role: UserRole) => void;
 }
