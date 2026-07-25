@@ -36,6 +36,12 @@ db.Student = sequelize.define("student", {
     type: Sequelize.ENUM('unallocated', 'allocated', 'confirmed', 'waitlisted'), 
     field: 'allocation_status',
     defaultValue: 'unallocated' 
+  },
+
+  is_verified: {
+    type: Sequelize.BOOLEAN,
+    defaultValue: false,
+    field: 'is_verified'
   }
 }, { timestamps: true, tableName: 'students' });
 

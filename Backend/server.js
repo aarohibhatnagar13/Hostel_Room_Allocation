@@ -36,8 +36,59 @@ dotenv.config();
 const app = express();
 const PORT = 5001;
 
-/* --------------------------- MIDDLEWARE --------------------------- */
 
+
+/* -------------------- VERIFICATION MIDDLEWARE -------------------- */
+
+const requireVerifiedEmail = asyncHandler(async (req, res, next) => {
+    // req.user has been populated by requireAuth
+    const student = await db.Student.findOne({ where: { email: req.user.email } });
+    
+    if (!student) {
+        return res.status(404).json({ success: false, message: "Student record not found." });
+    }
+
+    if (!student.is_verified) {
+        return res.status(403).json({ 
+            success: false, 
+            message: "Access Denied. You must verify your email address before submitting preferences or securing room allocations." 
+        });
+    }
+
+    next();
+});
+
+// Change: Add requireVerifiedEmail middleware
+app.post(
+    "/api/student/preferences",
+    requireAuth,
+    requireVerifiedEmail, // Blocks submission if email is unverified (0)
+    asyncHandler(async (req, res) => {
+        const { preferences } = req.body;
+
+        const student = await db.Student.findOne({ where: { email: req.user.email } });
+        if (!student) {
+            return res.status(404).json({ success: false, message: "Student record not found." });
+        }
+
+        // Save preferences directly to the JSON field in Sequelize
+        student.preferences = preferences || [];
+        await student.save();
+
+        res.json({ 
+            success: true, 
+            message: "Room preferences submitted successfully!" 
+        });
+    })
+);
+
+app.post(
+    "/api/allocation/confirm",
+    requireAuth,
+    requireVerifiedEmail, // 👈 Protect allocation confirmation
+    confirmRoomBooking
+);
+/* --------------------------- MIDDLEWARE --------------------------- */
 app.use(cors({
     origin: process.env.FRONTEND_URL || "http://localhost:5173", // Make sure this matches your React port exactly!
     credentials: true

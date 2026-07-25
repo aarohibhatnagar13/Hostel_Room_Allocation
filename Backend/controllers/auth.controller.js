@@ -1,7 +1,7 @@
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
 import db from "../models/index.js";
-import { sendPasswordResetEmail } from "../services/email.service.js";
+import { sendPasswordResetEmail, sendVerificationEmail } from "../services/email.service.js";
 
 const isProduction = process.env.NODE_ENV === "production";
 
@@ -13,7 +13,7 @@ const COOKIE_OPTIONS = {
 };
 
 // ==========================================
-// 1. SIGNUP (Email Bypassed for Testing)
+// 1. SIGNUP (With Terminal Fallback)
 // ==========================================
 export const signup = async (req, res, next) => {
     try {
@@ -37,8 +37,8 @@ export const signup = async (req, res, next) => {
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt);
 
-        // Save directly to database
-        await db.Student.create({
+        // Save directly to database with is_verified = false (0)
+        const newStudent = await db.Student.create({
             name,
             roll_number: normalizedRollNo,
             email: normalizedEmail,
@@ -48,19 +48,78 @@ export const signup = async (req, res, next) => {
             year_of_study: yearOfStudy,
             preferences: preferences || [],
             roommate_ids: roommate_ids || [],
-            allocationStatus: 'unallocated'
+            allocationStatus: 'unallocated',
+            is_verified: false 
         });
 
-        res.status(201).json({ success: true, message: "Account created successfully! You can now log in." });
+        // Generate Verification Token valid for 24 hours
+        const verificationToken = jwt.sign(
+            { email: newStudent.email },
+            process.env.JWT_SECRET,
+            { expiresIn: '24h' }
+        );
+
+        // Attempt to send verification email
+        try {
+            await sendVerificationEmail(newStudent.email, verificationToken);
+            res.status(201).json({ success: true, message: "Account created successfully! A verification email has been sent to your inbox." });
+        } catch (emailErr) {
+            console.error("❌ SMTP TRANSACTION FAILED (SIGNUP EMAIL BLOCKED):", emailErr.message);
+            
+            // DEVELOPMENT FALLBACK LINK FOR WI-FI BLOCKS
+            const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3080';
+            const fallbackLink = `${frontendUrl}/verify?token=${verificationToken}`;
+            
+            console.log("\n------------------ DEVELOPMENT FALLBACK ------------------");
+            console.log(`✉️ Verification Link for ${newStudent.email}:`);
+            console.log(fallbackLink);
+            console.log("----------------------------------------------------------\n");
+
+            return res.status(201).json({ 
+                success: true, 
+                message: "Account created! Since SMTP is blocked on your network, copy the verification link from your Backend Terminal to verify." 
+            });
+        }
     } catch (e) {
         next(e);
     }
 };
 
-export const verifyEmail = async (req, res, next) => { res.json({ success: true }); };
+export const verifyEmail = async (req, res, next) => {
+    try {
+        const { token } = req.params;
+
+        if (!token) {
+            return res.status(400).json({ success: false, message: "Verification token is missing." });
+        }
+
+        let decoded;
+        try {
+            decoded = jwt.verify(token, process.env.JWT_SECRET);
+        } catch (err) {
+            return res.status(400).json({ success: false, message: "The verification link is invalid or has expired." });
+        }
+
+        const student = await db.Student.findOne({ where: { email: decoded.email } });
+        if (!student) {
+            return res.status(404).json({ success: false, message: "Associated student account not found." });
+        }
+
+        if (student.is_verified) {
+            return res.status(200).json({ success: true, message: "Account is already verified." });
+        }
+
+        student.is_verified = true;
+        await student.save();
+
+        res.status(200).json({ success: true, message: "Email successfully verified! You can now access full portal activities." });
+    } catch (e) {
+        next(e);
+    }
+};
 
 // ==========================================
-// 3. LOGIN (Domain Check Removed)
+// 3. LOGIN
 // ==========================================
 export const login = async (req, res, next) => {
     try {
@@ -89,7 +148,6 @@ export const login = async (req, res, next) => {
                 // STUDENT CHECK
                 const student = await db.Student.findOne({ where: { email } });
                 
-                // If account doesn't exist, stop here and tell the frontend!
                 if (!student) {
                     return res.status(401).json({ success: false, message: "Account not found. Please create an account first." });
                 }
@@ -116,7 +174,7 @@ export const logout = async (req, res, next) => {
 };
 
 // ==========================================
-// 4. FORGOT PASSWORD
+// 4. FORGOT PASSWORD (With Terminal Fallback)
 // ==========================================
 export const forgotPassword = async (req, res, next) => {
     try {
@@ -126,25 +184,40 @@ export const forgotPassword = async (req, res, next) => {
             return res.status(400).json({ success: false, message: "Email is required." });
         }
 
-        // To protect user privacy, return a standard success message whether the user exists or not.
-        const genericSuccessMessage = "Reset link sent to your email if the account exists.";
+        const genericSuccessMessage = "Reset link generated successfully.";
 
         const student = await db.Student.findOne({ where: { email } });
         if (!student) {
             return res.status(200).json({ success: true, message: genericSuccessMessage });
         }
 
-        // Generate temporary single-use reset token valid for 15 minutes
         const resetToken = jwt.sign(
             { email: student.email, rollNo: student.roll_number },
             process.env.JWT_SECRET,
             { expiresIn: "15m" }
         );
 
-        // Send reset email via preconfigured service
-        await sendPasswordResetEmail(student.email, resetToken);
+        try {
+            await sendPasswordResetEmail(student.email, resetToken);
+            return res.status(200).json({ success: true, message: "Reset link sent to your email." });
+        } catch (emailErr) {
+            console.error("❌ SMTP TRANSACTION FAILED (RESET EMAIL BLOCKED):", emailErr.message);
 
-        return res.status(200).json({ success: true, message: genericSuccessMessage });
+            // DEVELOPMENT FALLBACK LINK FOR WI-FI BLOCKS
+            const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3080';
+            const fallbackLink = `${frontendUrl}/reset-password?token=${resetToken}`;
+
+            console.log("\n------------------ DEVELOPMENT FALLBACK ------------------");
+            console.log(`🔑 Password Reset Link for ${student.email}:`);
+            console.log(fallbackLink);
+            console.log("----------------------------------------------------------\n");
+
+            // Returns status 200 with fallback instructions
+            return res.status(200).json({ 
+                success: true, 
+                message: "Reset link generated! Since SMTP is blocked on your network, check your Backend Terminal to copy the reset link." 
+            });
+        }
     } catch (e) {
         next(e);
     }
@@ -155,7 +228,6 @@ export const forgotPassword = async (req, res, next) => {
 // ==========================================
 export const resetPassword = async (req, res, next) => {
     try {
-        // Accepts both "newPassword" (from frontend api.ts) and standard "password" keys
         const { token, newPassword, password } = req.body;
         const targetPassword = newPassword || password;
 
@@ -167,7 +239,6 @@ export const resetPassword = async (req, res, next) => {
             return res.status(400).json({ success: false, message: "New password is required." });
         }
 
-        // Validate password rules on backend to keep schema parity with frontend checks
         if (targetPassword.length < 8) {
             return res.status(400).json({ success: false, message: "Password must be at least 8 characters." });
         }
@@ -184,7 +255,6 @@ export const resetPassword = async (req, res, next) => {
             return res.status(400).json({ success: false, message: "Password must contain at least 1 symbol." });
         }
 
-        // Decode and verify reset token
         let decoded;
         try {
             decoded = jwt.verify(token, process.env.JWT_SECRET);
@@ -195,17 +265,14 @@ export const resetPassword = async (req, res, next) => {
             return res.status(400).json({ success: false, message: "Invalid or corrupted reset token." });
         }
 
-        // Locate student from decoded email
         const student = await db.Student.findOne({ where: { email: decoded.email } });
         if (!student) {
             return res.status(404).json({ success: false, message: "Student account not found." });
         }
 
-        // Securely hash the new password
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(targetPassword, salt);
 
-        // Persist update in Database
         student.password = hashedPassword;
         await student.save();
 
