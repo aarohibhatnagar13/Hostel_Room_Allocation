@@ -51,11 +51,11 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
       <div className="max-w-md w-full space-y-8 bg-white p-10 rounded-[2.5rem] shadow-xl border border-gray-100">
         
         <div className="text-center">
-            <img 
-              src="https://upload.wikimedia.org/wikipedia/en/thumb/f/f6/LNMIIT_logo.png/220px-LNMIIT_logo.png" 
-              alt="University Logo" 
-              className="h-20 mx-auto mb-6 object-contain"
-            />
+        <img
+  src={`data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23005a9c'><path d='M20 10V7A2 2 0 0018 5H6A2 2 0 004 7v3a2 2 0 00-2 2v5h1.33L4 19h1l.67-2h12.66l.67 2h1l.67-2H22v-5a2 2 0 00-2-2zm-9-3h7v3h-7V7zm-5 0h3v3H6V7zm-2 5h16v3H4v-3z'/></svg>`}
+  alt="University Logo"
+  className="h-20 mx-auto mb-6 object-contain"
+/>
             <h2 className="text-3xl font-black text-[#005a9c] uppercase tracking-tighter">Portal Access</h2>
             <p className="mt-2 text-[10px] uppercase tracking-[0.2em] font-bold text-gray-400">
               Hostel Allocation System
@@ -70,7 +70,7 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
                 type="email"
                 required
                 className="w-full px-5 py-4 border border-gray-200 placeholder-gray-400 text-gray-900 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#005a9c] focus:bg-white bg-gray-50 font-bold text-sm transition-all"
-                placeholder="rollno@lnmiit.ac.in"
+                placeholder="rollno@mnit.ac.in"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
               />
