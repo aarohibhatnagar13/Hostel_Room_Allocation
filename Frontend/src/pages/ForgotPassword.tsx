@@ -47,7 +47,7 @@ export const ForgotPassword = () => {
                     <input
                         type="email"
                         required
-                        className="w-full px-5 py-4 border border-gray-200 placeholder-gray-400 text-gray-900 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#e35205] bg-gray-50 focus:bg-white font-bold text-sm transition-all"
+                        className="w-full px-5 py-4 border border-gray-200 placeholder-gray-400 text-gray-900 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#005A9C] bg-gray-50 focus:bg-white font-bold text-sm transition-all"
                         placeholder="you@mnit.ac.in"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
@@ -63,7 +63,7 @@ export const ForgotPassword = () => {
                 <button
                     type="submit"
                     disabled={status === 'loading'}
-                    className="w-full flex justify-center py-4 px-4 text-xs font-black uppercase tracking-widest rounded-2xl text-white bg-[#005A9C] hover:bg-orange-700 transition-all shadow-xl active:scale-95 disabled:opacity-50"
+                    className="w-full flex justify-center py-4 px-4 text-xs font-black uppercase tracking-widest rounded-2xl text-white bg-[#005A9C] hover:bg-[#003B66] transition-all shadow-xl active:scale-95 disabled:opacity-50"
                 >
                     {status === 'loading' ? 'Sending...' : 'Send Reset Link'}
                 </button>
