@@ -27,7 +27,7 @@ export const ForgotPassword = () => {
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8 bg-white p-10 rounded-[2.5rem] shadow-xl border border-gray-100">
         <div className="text-center">
-            <h2 className="text-3xl font-black text-[#e35205] uppercase tracking-tighter">Reset Password</h2>
+            <h2 className="text-3xl font-black text-[#005A9C] uppercase tracking-tighter">Reset Password</h2>
             <p className="mt-2 text-xs font-bold text-gray-400">Enter your college email to receive a reset link.</p>
         </div>
 
@@ -63,7 +63,7 @@ export const ForgotPassword = () => {
                 <button
                     type="submit"
                     disabled={status === 'loading'}
-                    className="w-full flex justify-center py-4 px-4 text-xs font-black uppercase tracking-widest rounded-2xl text-white bg-[#e35205] hover:bg-orange-700 transition-all shadow-xl active:scale-95 disabled:opacity-50"
+                    className="w-full flex justify-center py-4 px-4 text-xs font-black uppercase tracking-widest rounded-2xl text-white bg-[#005A9C] hover:bg-orange-700 transition-all shadow-xl active:scale-95 disabled:opacity-50"
                 >
                     {status === 'loading' ? 'Sending...' : 'Send Reset Link'}
                 </button>
