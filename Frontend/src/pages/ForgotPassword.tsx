@@ -48,7 +48,7 @@ export const ForgotPassword = () => {
                         type="email"
                         required
                         className="w-full px-5 py-4 border border-gray-200 placeholder-gray-400 text-gray-900 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#e35205] bg-gray-50 focus:bg-white font-bold text-sm transition-all"
-                        placeholder="you@lnmiit.ac.in"
+                        placeholder="you@mnit.ac.in"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                     />
