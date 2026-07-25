@@ -1,6 +1,7 @@
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
 import db from "../models/index.js";
+import { sendPasswordResetEmail } from "../services/email.service.js";
 
 const isProduction = process.env.NODE_ENV === "production";
 
@@ -114,5 +115,102 @@ export const logout = async (req, res, next) => {
     return res.json({ success: true, message: "Logged out successfully" });
 };
 
-export const forgotPassword = async (req, res, next) => { res.json({ success: true }); };
-export const resetPassword = async (req, res, next) => { res.json({ success: true }); };
+// ==========================================
+// 4. FORGOT PASSWORD
+// ==========================================
+export const forgotPassword = async (req, res, next) => {
+    try {
+        const email = (req.body.email || "").trim().toLowerCase();
+
+        if (!email) {
+            return res.status(400).json({ success: false, message: "Email is required." });
+        }
+
+        // To protect user privacy, return a standard success message whether the user exists or not.
+        const genericSuccessMessage = "Reset link sent to your email if the account exists.";
+
+        const student = await db.Student.findOne({ where: { email } });
+        if (!student) {
+            return res.status(200).json({ success: true, message: genericSuccessMessage });
+        }
+
+        // Generate temporary single-use reset token valid for 15 minutes
+        const resetToken = jwt.sign(
+            { email: student.email, rollNo: student.roll_number },
+            process.env.JWT_SECRET,
+            { expiresIn: "15m" }
+        );
+
+        // Send reset email via preconfigured service
+        await sendPasswordResetEmail(student.email, resetToken);
+
+        return res.status(200).json({ success: true, message: genericSuccessMessage });
+    } catch (e) {
+        next(e);
+    }
+};
+
+// ==========================================
+// 5. RESET PASSWORD
+// ==========================================
+export const resetPassword = async (req, res, next) => {
+    try {
+        // Accepts both "newPassword" (from frontend api.ts) and standard "password" keys
+        const { token, newPassword, password } = req.body;
+        const targetPassword = newPassword || password;
+
+        if (!token) {
+            return res.status(400).json({ success: false, message: "Missing or invalid token." });
+        }
+
+        if (!targetPassword) {
+            return res.status(400).json({ success: false, message: "New password is required." });
+        }
+
+        // Validate password rules on backend to keep schema parity with frontend checks
+        if (targetPassword.length < 8) {
+            return res.status(400).json({ success: false, message: "Password must be at least 8 characters." });
+        }
+        if (!/[0-9]/.test(targetPassword)) {
+            return res.status(400).json({ success: false, message: "Password must contain at least 1 numeric character." });
+        }
+        if (!/[a-z]/.test(targetPassword)) {
+            return res.status(400).json({ success: false, message: "Password must contain at least 1 lowercase letter." });
+        }
+        if (!/[A-Z]/.test(targetPassword)) {
+            return res.status(400).json({ success: false, message: "Password must contain at least 1 uppercase letter." });
+        }
+        if (!/[^a-zA-Z0-9]/.test(targetPassword)) {
+            return res.status(400).json({ success: false, message: "Password must contain at least 1 symbol." });
+        }
+
+        // Decode and verify reset token
+        let decoded;
+        try {
+            decoded = jwt.verify(token, process.env.JWT_SECRET);
+        } catch (err) {
+            if (err.name === "TokenExpiredError") {
+                return res.status(400).json({ success: false, message: "The reset link has expired. Please request a new one." });
+            }
+            return res.status(400).json({ success: false, message: "Invalid or corrupted reset token." });
+        }
+
+        // Locate student from decoded email
+        const student = await db.Student.findOne({ where: { email: decoded.email } });
+        if (!student) {
+            return res.status(404).json({ success: false, message: "Student account not found." });
+        }
+
+        // Securely hash the new password
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(targetPassword, salt);
+
+        // Persist update in Database
+        student.password = hashedPassword;
+        await student.save();
+
+        return res.status(200).json({ success: true, message: "Password successfully updated." });
+    } catch (e) {
+        next(e);
+    }
+};

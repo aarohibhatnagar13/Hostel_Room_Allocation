@@ -4,15 +4,25 @@ import dotenv from 'dotenv';
 // Load environment variables directly from the backend folder
 dotenv.config();
 
+const portNumber = parseInt(process.env.SMTP_PORT || '587', 10);
+
 // Transporter strictly uses your Environment Variables
 const transporter = nodemailer.createTransport({
     host: process.env.SMTP_HOST,
-    port: process.env.SMTP_PORT,
-    secure: false, 
+    port: portNumber,
+    secure: portNumber === 465, // True only for 465 (SSL), false for 587 (TLS/STARTTLS)
     auth: {
         user: process.env.SMTP_USER,
         pass: process.env.SMTP_PASS,
     },
+    tls: {
+        // Prevents Node from hanging on local SSL verification issues
+        rejectUnauthorized: false
+    },
+    family: 4, // Forces Node to use IPv4 instead of IPv6 (fixes EHOSTUNREACH errors)
+    connectionTimeout: 10000, // 10 seconds timeout limit
+    greetingTimeout: 10000,
+    socketTimeout: 15000
 });
 
 export const sendVerificationEmail = async (toEmail, token) => {
