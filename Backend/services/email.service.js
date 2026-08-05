@@ -88,6 +88,9 @@ export const sendPasswordResetEmail = async (toEmail, token) => {
 
     console.log(`Sending Password Reset Email to -> ${toEmail}`);
     
+
+    
+    //sending mail safely
     // Sends the email safely to the user
     await transporter.sendMail(mailOptions); 
 };
