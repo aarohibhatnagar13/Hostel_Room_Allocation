@@ -35,10 +35,9 @@ An automated, secure, and role-based hostel allocation portal designed to stream
 
 ## System Requirements
 
-* Node.js v18.0.0 or higher
 * MySQL v8.0 or higher
+* Node.js v18.0.0 or higher
 * Git
-* PM2 (recommended for production deployment)
 
 ---
 
