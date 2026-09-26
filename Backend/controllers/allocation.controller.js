@@ -1,8 +1,8 @@
 import db from "../models/index.js";
-import { runHostelAllocationOptimized } from "../logic/allocator.js";
+import {runHostelAllocationOptimized} from "../logic/allocator.js";
 import lruCache from "../utils/lruCache.js";
-import { asyncHandler } from "../utils/AsyncHandler.js";
-import { v4 as uuidv4 } from 'uuid';
+import {asyncHandler} from "../utils/AsyncHandler.js";
+import {v4 as uuidv4} from 'uuid';
 
 export const triggerAllocation = asyncHandler(async (req, res) => {
     // 1. Fetch unallocated students and all rooms
