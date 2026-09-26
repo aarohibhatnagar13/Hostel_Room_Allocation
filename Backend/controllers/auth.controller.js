@@ -49,7 +49,7 @@ export const signup = async (req, res, next) => {
             preferences: preferences || [],
             roommate_ids: roommate_ids || [],
             allocationStatus: 'unallocated',
-            is_verified: false 
+            is_verified: true
         });
 
         // Generate Verification Token valid for 24 hours

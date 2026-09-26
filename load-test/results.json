@@ -1,0 +1,63 @@
+{
+  "summary": {
+    "total_students": 2000,
+    "total_rooms": 180,
+    "allocated_count": 360,
+    "waitlisted_count": 1640,
+    "total_time_ms": 19.604,
+    "avg_time_per_student_ms": 0.0098,
+    "timestamp": "2026-08-29T09:37:46.223Z"
+  },
+  "sampleAllocations": [
+    {
+      "student_id": 225,
+      "student_name": "Neha Chauhan",
+      "room_id": 18,
+      "room_number": "A-102",
+      "hostel": "Hostel A",
+      "room_type": "Double",
+      "allocation_type": "Mutual Group",
+      "room_gender": "Male"
+    },
+    {
+      "student_id": 922,
+      "student_name": "Kabir Rao",
+      "room_id": 18,
+      "room_number": "A-102",
+      "hostel": "Hostel A",
+      "room_type": "Double",
+      "allocation_type": "Mutual Group",
+      "room_gender": "Male"
+    },
+    {
+      "student_id": 290,
+      "student_name": "Reyansh Rao",
+      "room_id": 76,
+      "room_number": "B-100",
+      "hostel": "Hostel B",
+      "room_type": "Triple",
+      "allocation_type": "Mutual Group",
+      "room_gender": "Female"
+    },
+    {
+      "student_id": 1424,
+      "student_name": "Rohan Bhatnagar",
+      "room_id": 76,
+      "room_number": "B-100",
+      "hostel": "Hostel B",
+      "room_type": "Triple",
+      "allocation_type": "Mutual Group",
+      "room_gender": "Female"
+    },
+    {
+      "student_id": 1095,
+      "student_name": "Advait Bhatnagar",
+      "room_id": 166,
+      "room_number": "D-100",
+      "hostel": "Hostel D",
+      "room_type": "Triple",
+      "allocation_type": "Mutual Group",
+      "room_gender": "Male"
+    }
+  ]
+}
